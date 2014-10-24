@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <link rel="stylesheet" type="text/css" href="/resources/WHD.css" media="all">
+
+		<style type="text/css">
+
+		html {
+			font: font-family: "nunito";
+			background-color: Linen;
+		}
+		
+		h1 {text-align: center;}
+		
+		text {
+		font: 10px sans-serif;
+		}
+
+		.chart div {
+		font: 10px sans-serif;
+		background-color: steelblue;
+		text-align: right;
+		padding: 3px;
+		margin: 1px;
+		color: white;
+		}
+
+		.axis path { fill: none; stroke: black;}
+		.axis {font-size: 8pt; font-family: sans-serif;}
+		.axisLabel {font-size: 12pt; font-family: sans-serif;}
+		.tick { fill: none; stroke: black;}
+		circle{
+			stroke: black;
+			stroke-width: 0.5px;
+			fill: RoyalBlue;
+			opacity: 0.6;
+		}
+		
+		.hover {fill: red;}
+		
+		</style>
+		<!-- <script src="http://d3js.org/d3.v3.min.js" type="text/javascript"> -->
+		<script src="d3.min.js" type="text/javascript">
+</script>
+		<script type="text/javascript">
+
+
+
+		function draw(data) {
+		"use strict";
+		var margin = 50, 
+		width = 900,
+		height = 600;
+
+		// ?_extent (x, y, r) are 2-element arrays containingh min and max values in the data sets (HP, Cost, MPG in this case)
+		// ?_scale maps the data range from extent to the pixel positions on screen, based on margin, width, height
+		// ?_axis creates an axis that can be displayed.
+		
+		var x_extent = d3.extent(data, function(d){return parseInt(d.HP)});
+		var x_scale = d3.scale.linear() .range([margin,width - margin]) .domain(x_extent);
+		var x_axis = d3.svg.axis().scale(x_scale);
+
+		var y_extent = d3.extent(data, function(d){return parseInt(d.DealerCost)});
+		var y_scale = d3.scale.linear().range([height - margin,margin]).domain(y_extent);   
+		var y_axis = d3.svg.axis().scale(y_scale).orient("left");
+
+		var r_extent = d3.extent(data, function(d) {return parseInt(d.MPG);});
+		var r_scale = d3.scale.linear().range([2,20]).domain(r_extent);
+
+		// Create a circle for each data point (car), but this just creates empty elements at this stage
+		var dots =  d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height)
+			.selectAll("circle")
+			.data(data).enter().append("circle");
+
+		// Set the X-Y co-ords (cx, cy), and the radius, and store carID as CSS #ID for later identity
+		d3.selectAll("circle")
+			.attr("cx", function(d) {return x_scale(parseInt(d.HP))})
+			.attr("cy", function (d) {return y_scale(parseInt(d.DealerCost))})
+			.attr("r", function (d) {return r_scale(parseInt(d.MPG));})
+			.attr("id", function(d) {return d.carID});
+
+
+		var z = d3.scale.linear().range(["lightgrey", "steelblue"]);
+
+		d3.selectAll("circle")
+			.on("mouseover", function(d) {d3.select(this).classed("hover", true)
+					.transition().attr("r", function (d) {return 2.0 * r_scale(parseInt(d.MPG));})
+					})
+			.on ("mouseover.tooltip", function(d){
+					d3.select("#toolTip").remove();
+					d3.select("svg").append("text").text(d.Make + " " + d.Model)
+					.attr("x", x_scale(parseInt(d.HP) + 10))
+					.attr("y", y_scale(parseInt(d.DealerCost) - 10))
+					.attr("id", "toolTip");
+					})
+			.on("mouseout", function(d) {
+				d3.select("#toolTip").remove();
+				d3.select(this).classed("hover", false).transition()
+				.attr("r", function (d) {return  r_scale(parseInt(d.MPG));})});
+				
+			
+		// add X and Y axes
+		d3.select("svg").append("g").attr("class", "x axis").attr("transform", "translate(0, " + (height - margin + 16) + ")").call(x_axis);
+		d3.select("svg").append("g").attr("class", "y axis").attr("transform", "translate(" +  margin + ", 16)").call(y_axis);
+
+		// and add axis text
+		d3.select(".x.axis").append("text").text("HorsePower").attr("class", "axisLabel")
+			.attr("x", (width/2) - margin).attr("y", margin/1.5 - 40);
+		d3.select (".y.axis").append("text").text("Cost $").attr("class", "axisLabel")
+			.attr("transform", "rotate (-90, -43, 0) translate(-280, 65)");
+
+		}
+
+
+		</script>
+		<title>M07 Scatter Graph</title>
+		<nav><a class="homeButton" href="../M07_index.html">Back</a></nav>
+	</head>
+	<body>
+		<h1>
+			USA Car Market - Cost vs Power
+		</h1>
+		<div class="chart">
+			<script type="text/javascript">
+				d3.csv("carsData.csv", draw);
+			</script>
+		</div>
+
+	</body>
+</html>
